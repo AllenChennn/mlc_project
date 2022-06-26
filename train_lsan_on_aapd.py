@@ -35,8 +35,8 @@ test_loader = data_utils.DataLoader(test_data, batch_size, drop_last=True)
 
 
 ## 定义模型
-word_embed = text.embedding.CustomEmbedding('files/lsan/word_embed.txt').idx_to_vec.asnumpy()
-label_embed = np.load("files/lsan/label_embed.npy")
+word_embed = text.embedding.CustomEmbedding('data/AAPD/word_embed.txt').idx_to_vec.asnumpy()
+label_embed = np.load("data/AAPD/label_embed.npy")
 word_embed = torch.from_numpy(word_embed).float()
 label_embed = torch.from_numpy(label_embed).float()
 
@@ -75,6 +75,8 @@ class Trainer(object):
         for i in range(self.epochs):
             self.train()
             self.evaluation()
+
+            self.n_epoch += 1
     
     def train(self):
         self.model.train()
@@ -84,6 +86,7 @@ class Trainer(object):
         prec_k = []
         ndcg_k = []
         for i, (x, y) in enumerate(tqdm(self.train_dataset)):
+            self.optimizer.zero_grad()
             # x, y = train[0].cuda(), train[1].cuda()
             if self.use_cuda:
                 x = x.cuda()
@@ -93,7 +96,7 @@ class Trainer(object):
             loss = self.criterion(out, y.float()) / x.shape[0]
             # 反向传播，更新参数
             loss.backward()
-            self.optimizer.zero_grad()
+            
             self.optimizer.step()
             # 计算指标
             labels_cpu = y.data.cpu().float()
@@ -112,7 +115,7 @@ class Trainer(object):
         print("epoch %2d train end : avg_loss = %.4f" % (self.n_epoch, avg_loss))
         print("precision@1 : %.4f , precision@3 : %.4f , precision@5 : %.4f " % (epoch_prec[0], epoch_prec[2], epoch_prec[4]))
         print("ndcg@1 : %.4f , ndcg@3 : %.4f , ndcg@5 : %.4f " % (epoch_ndcg[0], epoch_ndcg[2], epoch_ndcg[4]))
-        self.n_epoch += 1
+        
     
     def evaluation(self):
         self.model.eval()
